@@ -165,6 +165,22 @@
   .join { font-size:1.08rem; margin:0 0 26px; }
   @media (max-width:760px) { .dims { grid-template-columns:1fr; } }
 
+  .two-eq { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  #pair .panel { background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .panel-k { font-size:0.78rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  .panel-v { font-size:1.2rem; font-weight:800; margin:2px 0 6px; }
+  .panel-v.hl2 { color:var(--alert); }
+  .panel-v.ok { color:#1f8a5b; }
+  .lead { font-size:0.95rem; margin-top:4px; }
+  .pair-out { margin:14px 0 2px; font-size:1.08rem; text-align:center; }
+  .outs { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0 8px; }
+  .out { border:1px solid var(--line); border-radius:10px; padding:14px 16px; background:var(--soft); }
+  .out .ok-k { font-size:0.78rem; letter-spacing:0.06em; text-transform:uppercase; font-weight:700; color:var(--muted); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 6px; }
+  .chip { padding:4px 10px; border-radius:999px; border:1px solid var(--line); background:var(--bg); font-weight:600; font-size:0.92rem; }
+  .chip.right { border-color:#1f8a5b; color:#1f8a5b; }
+  .held { font-weight:700; font-size:1.05rem; margin:10px 0 6px; }
+  @media (max-width:760px) { .two-eq, .outs { grid-template-columns:1fr; } }
   /* toy */
   .toy-row { transition:transform .35s ease; }
   .toy-row text.word { fill:var(--ink); font-weight:600; font-size:13px; }
@@ -222,8 +238,8 @@
     <a href="#account"><span>Explanation</span></a>
     <a href="#test"><span>Causal test</span></a>
     <a href="#lm"><span>Generalisation</span></a>
-    <a href="#fix"><span>Payoff</span></a>
-    <a href="#vision"><span>Vision</span></a>
+    <a href="#fix"><span>Application</span></a>
+    <a href="#vision"><span>Impact</span></a>
     <a href="#abstract"><span>Abstract</span></a>
   </nav>
 </aside>
@@ -238,13 +254,13 @@
   <div class="dims">
     <div class="dim">
       <div class="dim-k">Accuracy</div>
-      <div class="dim-t">Accuracy goes up, but the errors left behind sound right</div>
-      <p>A decoder reading words from brain signals alone often picks the wrong one. A <b>prior</b>, such as a language model that knows which words usually come next, fixes many of these mistakes. But the mistakes it leaves behind now read as fluent, believable sentences, and an accuracy score cannot tell you which ones they are.</p>
+      <div class="dim-t">Accuracy goes up. The errors left behind sound right.</div>
+      <p>A language model fixes many of the decoder's mistakes, but the ones it leaves read as fluent, believable sentences.</p>
     </div>
     <div class="dim">
       <div class="dim-k">Safety net</div>
-      <div class="dim-t">Confidence decides what gets said</div>
-      <p>So a brain&ndash;computer interface also reports how sure it is. Sure outputs are spoken; unsure ones are shown as a short list, sent back for checking, or held back. This is <b>selective output</b>, and it only protects the user if wrong outputs look less sure than right ones.</p>
+      <div class="dim-t">Confidence decides what gets said.</div>
+      <p>A brain&ndash;computer interface speaks when it is sure and holds back when it is not. That protects the user only if wrong outputs look less sure.</p>
     </div>
   </div>
   <p class="join">Both depend on the same numbers. When the prior changes <b>which word wins</b>, it also changes <b>how sure the system looks</b> about it.</p>
@@ -294,6 +310,28 @@
   <p class="step">Observation</p>
   <h2>Where most errors remain, confidence points the wrong way</h2>
   <p>To see where this happens, you need to know where the right word stood in the decoder's own list before the prior stepped in. A running system cannot know this, since it does not know the right word; its scores only give hints. In an offline study we do know it. So we took every word the decoder first got wrong, grouped them by how far down the right word started, and asked: <i>in each group, are the errors the prior fixed more confident than the ones it left wrong?</i></p>
+  <div class="viz" id="pair">
+    <div class="viz-head">
+      <div class="viz-title">Two errors after the prior has acted</div>
+      <div class="viz-sub">Illustrative example, same prior weight</div>
+    </div>
+    <div class="two-eq">
+      <div class="panel">
+        <div class="panel-k">Right word started near the top</div>
+        <div class="panel-v ok">Fixed, but only just</div>
+        <svg id="pairA" viewBox="0 0 320 130" role="img" aria-label="Fixed error: the right word wins by 0.2"></svg>
+        <div class="lead">Lead over 2nd: <b>0.2</b></div>
+      </div>
+      <div class="panel">
+        <div class="panel-k">Right word started far down</div>
+        <div class="panel-v hl2">Still wrong, and far ahead</div>
+        <svg id="pairB" viewBox="0 0 320 130" role="img" aria-label="Unfixed error: a wrong word leads another wrong word by 0.8"></svg>
+        <div class="lead">Lead over 2nd: <b>0.8</b></div>
+      </div>
+    </div>
+    <p class="pair-out">Rank outputs by confidence, and the system says the <b>wrong</b> one first.</p>
+  </div>
+
   <p>The answer is a score from 0 to 1. Above 0.5, confidence points to the fixed errors, as it should. Below 0.5, it points to the ones left wrong: backwards. Here the prior is our own, which builds its guess from the decoder's readings of the preceding words.</p>
 
   <div class="viz" id="rev">
@@ -387,7 +425,7 @@
 </section>
 
 <section id="fix">
-  <p class="step">Payoff</p>
+  <p class="step">Application</p>
   <h2>Not fixing every word. Knowing which ones not to say.</h2>
   <p>Errors that start far down the list are practically unfixable: the prior fixes about 1% of them, and pushing harder is exactly what overrides users. The realistic goal is to let the prior fix what it can and to <b>recognise the rest, so the system can hold them back</b>. The information is there, only hidden by the mixing: the prior's own scores, looked at separately, reach <b>0.94</b> on the 0-to-1 scale in the very group where the mixed confidence reads <b>0.39</b>.</p>
 
@@ -398,11 +436,24 @@
     <svg id="emitSvg" viewBox="0 0 640 210" role="img" aria-label="Bar chart of how often the system answers, by confidence information used"></svg>
     <div class="tip" id="emitTip"></div>
   </div>
+  <div class="outs">
+    <div class="out">
+      <div class="ok-k">When the system is sure enough</div>
+      <div class="chips"><span class="chip">set</span><span class="chip right">sat &#10003;</span><span class="chip">mat</span><span class="chip">cat</span><span class="chip">sit</span></div>
+      <p class="note" style="margin:0">It offers a short list, about five words on average, for the user to pick from. 92% of these lists contain the right word.</p>
+    </div>
+    <div class="out">
+      <div class="ok-k">When it is not</div>
+      <div class="held">Nothing is said.</div>
+      <p class="note" style="margin:0">The window is held back, to be repeated or confirmed, instead of putting a word in the user's mouth.</p>
+    </div>
+  </div>
+  <p class="note" style="margin:0 0 14px">Illustrative example of what a selective decoder outputs.</p>
   <p>Among the hardest errors, the share of answers that contain the right word rises from <b>36.4% to 50.8%</b>. Re-scaling the usual confidence cannot do this: it changes the numbers but not their order, so the flip stays.</p>
 </section>
 
 <section id="vision">
-  <p class="step">Vision</p>
+  <p class="step">Impact</p>
   <h2>Decoders that know when not to speak for you</h2>
   <p class="big">Brain&ndash;computer interfaces are judged by how often they are right. As language models make them fluent, a second question decides whether a person can trust one with their voice: <b>when it is wrong, does anyone know?</b> We show the answer can be no, exactly where errors pile up; we explain why, and show how to catch them. The explanation needs nothing but a prior added to weak brain evidence, so the same check applies to any decoder built this way.</p>
   <ol class="rules">
@@ -523,6 +574,24 @@
   const ta = document.getElementById("toyAlpha");
   ta.addEventListener("input", () => drawToy(+ta.value));
   drawToy(0);
+
+
+  /* ---------- paired errors (illustrative) ---------- */
+  (function () {
+    function draw(id, rows) {
+      const svg = document.getElementById(id);
+      const L = 58, W = 320, R = 40, rh = 36, maxV = 3.2, x = v => L + v / maxV * (W - L - R);
+      rows.forEach(([w, sc, pr, correct], i) => {
+        const y0 = 6 + i * rh;
+        txt((correct ? "\u2605 " : "") + w, { x: L - 8, y: y0 + 17, "text-anchor": "end", style: "fill:var(--ink);font-weight:600" }, svg);
+        el("rect", { x: L, y: y0 + 4, width: Math.max(1, x(sc) - L - 1), height: 18, rx: 3, fill: correct ? "var(--fused)" : "var(--pre)" }, svg);
+        if (pr > 0) el("rect", { x: x(sc) + 1, y: y0 + 4, width: x(sc + pr) - x(sc) - 1, height: 18, rx: 3, fill: "var(--prior)" }, svg);
+        txt((sc + pr).toFixed(1), { x: x(sc + pr) + 6, y: y0 + 17 }, svg);
+      });
+    }
+    draw("pairA", [["log", 1.2, 0.9, true], ["dog", 1.5, 0.4, false], ["fog", 0.8, 0, false]]);
+    draw("pairB", [["mat", 1.0, 1.8, false], ["cat", 0.2, 1.8, false], ["sat", 0.1, 1.8, true]]);
+  })();
 
   /* ---------- 2. reversal ---------- */
   const groups = ["2–3", "4–5", "6–10", "11–20", "21–50"];
